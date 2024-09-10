@@ -22,6 +22,10 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+
+#include <string.h>
+
+#include "keypad.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -36,6 +40,21 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+// save letters pressed in char array
+
+/*
+ Macros for keypad funtions
+*/
+
+char password[] = "1004214804";
+#define MAX_CHAR 10
+char char_array[MAX_CHAR];
+int char_index = 0;
+
+// flags for interrupt
+
+volatile int8_t compare_flag = 0;  // flag for comparing password
+volatile int8_t clear_flag = 0;   // flag for clearing char array
 
 /* USER CODE END PM */
 
@@ -65,6 +84,21 @@ int _write(int file, char *ptr, int len)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+	uint8_t key_pressed = keypad_scan(GPIO_Pin);
+	if (key_pressed != 0xFF) {
+		printf("Pressed: %c\r\n", key_pressed);
+    //save pressed key in char array
+    char_array[char_index] = key_pressed;
+    char_index++;
+	}
+  if (key_pressed == '*') // password verification
+  { 
+    compare_flag = 1;
+  }
+  if (key_pressed == '#')// clear char array
+  {
+    clear_flag = 1;
+  }
 
 }
 /* USER CODE END 0 */
@@ -86,7 +120,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  printf("Starting...\r\n");
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -111,6 +145,29 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    if (compare_flag == 1)
+    {
+      printf("Password: %s\r\n", password);
+      printf("Entered: %s\r\n", char_array);
+      //delete the last character
+      char_array[char_index - 1] = '\0';
+      printf("comparación: %s\r\n", char_array);
+      if (strcmp(password, char_array) == 0)
+      {
+        printf("Correct Password\r\n");
+      }
+      else
+      {
+        printf("Incorrect Password\r\n");
+      }
+      compare_flag = 0;
+    }
+    if (clear_flag == 1)
+    {
+      memset(char_array, 0, sizeof(char_array));
+      char_index = 0;
+      clear_flag = 0;
+    }
   }
   /* USER CODE END 3 */
 }
@@ -256,6 +313,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

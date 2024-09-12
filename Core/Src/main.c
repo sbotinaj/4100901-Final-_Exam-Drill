@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "keypad.h"
+#include "led_lib.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -155,10 +156,12 @@ int main(void)
       if (strcmp(password, char_array) == 0)
       {
         printf("Correct Password\r\n");
+        heartbeat(0, SYSTEM_LED_GPIO_Port, SYSTEM_LED_Pin);
       }
       else
       {
         printf("Incorrect Password\r\n");
+        heartbeat(1, SYSTEM_LED_GPIO_Port, SYSTEM_LED_Pin);
       }
       compare_flag = 0;
     }
